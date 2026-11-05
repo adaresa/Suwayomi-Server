@@ -64,6 +64,7 @@ import org.cef.callback.CefCallback
 import org.cef.callback.CefMediaAccessCallback
 import org.cef.callback.CefQueryCallback
 import org.cef.handler.CefDisplayHandlerAdapter
+import org.cef.handler.CefLifeSpanHandlerAdapter
 import org.cef.handler.CefLoadHandler
 import org.cef.handler.CefLoadHandlerAdapter
 import org.cef.handler.CefMessageRouterHandlerAdapter
@@ -225,6 +226,18 @@ class KcefWebViewProvider(
     }
 
     @Suppress("DEPRECATION")
+    private inner class LifeSpanHandler : CefLifeSpanHandlerAdapter() {
+        override fun onAfterCreated(browser: CefBrowser) {
+            val ua = settings.userAgentString
+            Log.d(TAG, "Using user-agent $ua")
+            browser.devToolsClient
+                .executeDevToolsMethod("Emulation.setUserAgentOverride", userAgentOverride(ua))
+                .whenComplete { _, error ->
+                    if (error != null) Log.e(TAG, "Failed to set user agent", error)
+                }
+        }
+    }
+
     private inner class LoadHandler : CefLoadHandlerAdapter() {
         override fun onLoadEnd(
             browser: CefBrowser,
@@ -435,8 +448,6 @@ class KcefWebViewProvider(
         ): Boolean {
             initialRequestData?.apply(request)
             initialRequestData = null
-            request.setHeaderByName("user-agent", settings.userAgentString, true)
-            Log.v(TAG, "Using user-agent ${settings.userAgentString}")
 
             // TODO: we should be calling this on the handler, since CEF calls us on its IO thread
             // thus if a client tried to use WebView#loadUrl as the docs suggest, this fails
@@ -552,6 +563,7 @@ class KcefWebViewProvider(
         kcefClient =
             runBlocking {
                 CefHelper.createClient().apply {
+                    addLifeSpanHandler(LifeSpanHandler())
                     addDisplayHandler(DisplayHandler())
                     addLoadHandler(LoadHandler())
                     addRequestHandler(RequestHandler())
@@ -710,13 +722,10 @@ class KcefWebViewProvider(
         script: String,
         resultCallback: ValueCallback<String>?,
     ) {
-        browser!!.evaluateJavaScript(
-            script.removePrefix("javascript:"),
-        )
-            {
-                Log.v(TAG, "JS returned: $it")
-                it?.let { handler.post { resultCallback?.onReceiveValue(it) } }
-            }
+        browser!!.evaluateJavaScriptLikeAndroid(script.removePrefix("javascript:")) {
+            Log.v(TAG, "JS returned: $it")
+            handler.post { resultCallback?.onReceiveValue(it) }
+        }
     }
 
     override fun saveWebArchive(filename: String): Unit = throw RuntimeException("Stub!")
