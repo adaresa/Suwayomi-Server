@@ -124,6 +124,7 @@ internal fun userAgentOverride(userAgent: String): String =
 
 fun CefBrowser.dispose() {
     stopLoad()
+    // Before the close: JCEF cancels a close it hasn't allowed and ignores any later close
     setCloseAllowed()
     close(true)
 }

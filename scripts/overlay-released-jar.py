@@ -16,7 +16,9 @@ from pathlib import Path
 released_path, output_path, *class_roots = map(Path, sys.argv[1:])
 # The only classes with changed code; the others in their source files differ only in line numbers
 PATCHED = {
+    "android/webkit/RenderProcessGoneDetail.class",
     "eu/kanade/tachiyomi/network/NetworkHelper.class",
+    "suwayomi/tachidesk/global/impl/KcefWebView.class",
     "xyz/nulldev/androidcompat/webkit/KcefHelperKt.class",
     "xyz/nulldev/androidcompat/webkit/KcefWebViewProvider.class",
     "xyz/nulldev/androidcompat/webkit/KcefWebViewProvider$LifeSpanHandler.class",

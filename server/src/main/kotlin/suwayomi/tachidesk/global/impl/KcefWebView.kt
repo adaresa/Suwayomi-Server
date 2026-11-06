@@ -294,7 +294,6 @@ class KcefWebView {
 
     fun destroy() {
         flush()
-        browser?.close(true)
         browser?.dispose()
         browser = null
         kcefClient?.disposeWithJsHandler()
@@ -302,7 +301,6 @@ class KcefWebView {
     }
 
     fun loadUrl(url: String) {
-        browser?.close(true)
         browser?.dispose()
         browser =
             kcefClient!!
